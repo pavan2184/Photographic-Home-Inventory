@@ -38,7 +38,7 @@ function AppNavigator() {
       {session ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} options={{ title: "My Inventory" }} />
-          <Stack.Screen name="Camera" component={CameraScreen} options={{ title: "Take Photo" }} />
+          <Stack.Screen name="Camera" component={CameraScreen} options={{ title: "Add Photo" }} />
           <Stack.Screen name="Detect" component={DetectScreen} options={{ title: "Identify Item" }} />
           <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: "Item Details" }} />
         </>

@@ -1,50 +1,79 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 import { api } from "../lib/api";
 
+function showAlert(title, msg) {
+  if (Platform.OS === "web") {
+    window.alert(`${title}: ${msg}`);
+  } else {
+    const { Alert } = require("react-native");
+    Alert.alert(title, msg);
+  }
+}
+
 export default function CameraScreen({ navigation }) {
-  const cameraRef = useRef(null);
-  const [permission, requestPermission] = useCameraPermissions();
   const [uploading, setUploading] = useState(false);
 
-  if (!permission) return <View style={styles.container} />;
+  const pickImage = async (useCamera) => {
+    if (uploading) return;
 
-  if (!permission.granted) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.message}>Camera permission is required</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+    // Request permissions (auto-granted on web)
+    if (useCamera) {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        showAlert("Permission Required", "Camera permission is needed to take photos.");
+        return;
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        showAlert("Permission Required", "Photo library permission is needed to select photos.");
+        return;
+      }
+    }
 
-  const takePhoto = async () => {
-    if (!cameraRef.current || uploading) return;
+    const options = {
+      mediaTypes: ["images"],
+      quality: 0.7,
+      base64: true,
+    };
+
+    let result;
+    try {
+      result = useCamera
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+    } catch (e) {
+      showAlert("Error", "Could not open image picker: " + e.message);
+      return;
+    }
+
+    if (result.canceled || !result.assets || result.assets.length === 0) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    if (!asset.base64) {
+      showAlert("Error", "Could not read image data.");
+      return;
+    }
+
     setUploading(true);
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
-
       // Get signed upload URL from backend
       const { upload_url, image_url } = await api.getUploadURL("photo.jpg");
 
-      // Read file and upload directly to Supabase Storage
-      const fileContent = await FileSystem.readAsStringAsync(photo.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const binaryString = atob(fileContent);
+      // Convert base64 to binary for upload
+      const binaryString = atob(asset.base64);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
@@ -56,10 +85,9 @@ export default function CameraScreen({ navigation }) {
         body: bytes.buffer,
       });
 
-      // Navigate to detection with the image URL
-      navigation.replace("Detect", { imageUrl: image_url, photoUri: photo.uri });
+      navigation.replace("Detect", { imageUrl: image_url, photoUri: asset.uri });
     } catch (e) {
-      Alert.alert("Upload Failed", e.message);
+      showAlert("Upload Failed", e.message);
     } finally {
       setUploading(false);
     }
@@ -67,47 +95,93 @@ export default function CameraScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} ref={cameraRef} facing="back">
-        <View style={styles.overlay}>
-          {uploading ? (
-            <ActivityIndicator size="large" color="#fff" />
-          ) : (
-            <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
-              <View style={styles.captureInner} />
+      <View style={styles.content}>
+        <Text style={styles.title}>Add Item Photo</Text>
+        <Text style={styles.subtitle}>
+          Take a photo or choose one from your gallery
+        </Text>
+
+        {uploading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4a90d9" />
+            <Text style={styles.loadingText}>Uploading photo...</Text>
+          </View>
+        ) : (
+          <View style={styles.buttonGroup}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => pickImage(true)}
+            >
+              <Text style={styles.primaryButtonText}>Take Photo</Text>
             </TouchableOpacity>
-          )}
-        </View>
-      </CameraView>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => pickImage(false)}
+            >
+              <Text style={styles.secondaryButtonText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
-  centered: { flex: 1, backgroundColor: "#0f0f23", justifyContent: "center", alignItems: "center" },
-  message: { color: "#fff", fontSize: 16, marginBottom: 16 },
-  button: { backgroundColor: "#4a90d9", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  camera: { flex: 1 },
-  overlay: {
+  container: { flex: 1, backgroundColor: "#0f0f23" },
+  content: {
     flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "center",
-    paddingBottom: 40,
-  },
-  captureButton: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 4,
-    borderColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 32,
   },
-  captureInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#fff",
+  title: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: "#888",
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: 48,
+  },
+  buttonGroup: {
+    width: "100%",
+  },
+  primaryButton: {
+    backgroundColor: "#4a90d9",
+    borderRadius: 12,
+    padding: 18,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  primaryButtonText: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  secondaryButton: {
+    backgroundColor: "#1a1a2e",
+    borderRadius: 12,
+    padding: 18,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2a2a4a",
+  },
+  secondaryButtonText: {
+    color: "#4a90d9",
+    fontSize: 17,
+    fontWeight: "600",
+  },
+  loadingContainer: {
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#aaa",
+    fontSize: 15,
+    marginTop: 16,
   },
 });

@@ -65,7 +65,13 @@ async def detect(request: DetectRequest, user_id: str = Depends(get_current_user
     _check_rate_limit(user_id)
 
     logger.info("Detection requested by user=%s", user_id)
-    return await detect_item(request.image_url)
+    try:
+        return await detect_item(request.image_url)
+    except RuntimeError as e:
+        error_msg = str(e)
+        if "quota" in error_msg.lower():
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=error_msg)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 
 
 # --- Items CRUD ---

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,11 +12,21 @@ import {
 } from "react-native";
 import { api } from "../lib/api";
 
+function showAlert(title, msg) {
+  if (Platform.OS === "web") {
+    window.alert(`${title}: ${msg}`);
+  } else {
+    const { Alert } = require("react-native");
+    Alert.alert(title, msg);
+  }
+}
+
 export default function DetectScreen({ route, navigation }) {
   const { imageUrl, photoUri } = route.params;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editable, setEditable] = useState(false);
+  const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
@@ -35,10 +45,9 @@ export default function DetectScreen({ route, navigation }) {
       setBrand(result.brand || "");
       setConfidence(result.confidence);
       setIsUncertain(result.is_uncertain);
-      // Auto-enable editing if AI is uncertain
       if (result.is_uncertain) setEditable(true);
     } catch (e) {
-      Alert.alert("Detection Failed", "Couldn't identify item. Enter details manually.");
+      setError(e.message || "Detection failed");
       setEditable(true);
       setIsUncertain(true);
     } finally {
@@ -47,8 +56,8 @@ export default function DetectScreen({ route, navigation }) {
   };
 
   const handleConfirm = async () => {
-    if (!name.trim()) return Alert.alert("Error", "Name is required");
-    if (!category.trim()) return Alert.alert("Error", "Category is required");
+    if (!name.trim()) return showAlert("Error", "Name is required");
+    if (!category.trim()) return showAlert("Error", "Category is required");
 
     setSaving(true);
     try {
@@ -61,7 +70,7 @@ export default function DetectScreen({ route, navigation }) {
       });
       navigation.popToTop();
     } catch (e) {
-      Alert.alert("Save Failed", e.message);
+      showAlert("Save Failed", e.message);
     } finally {
       setSaving(false);
     }
@@ -92,7 +101,12 @@ export default function DetectScreen({ route, navigation }) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Image source={{ uri: photoUri }} style={styles.image} />
 
-      {isUncertain && (
+      {error ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorSubtext}>Enter item details manually below</Text>
+        </View>
+      ) : isUncertain && (
         <View style={styles.warningBanner}>
           <Text style={styles.warningText}>
             Low confidence — please review or enter details manually
@@ -198,6 +212,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   warningText: { color: "#ff9800", fontSize: 14, textAlign: "center" },
+  errorBanner: {
+    backgroundColor: "#f4433620",
+    borderWidth: 1,
+    borderColor: "#f44336",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+  },
+  errorText: { color: "#f44336", fontSize: 14, textAlign: "center", fontWeight: "600" },
+  errorSubtext: { color: "#f4433699", fontSize: 13, textAlign: "center", marginTop: 4 },
   confidenceRow: { flexDirection: "row", alignItems: "center", marginTop: 16, marginBottom: 8 },
   confidenceBar: {
     flex: 1,

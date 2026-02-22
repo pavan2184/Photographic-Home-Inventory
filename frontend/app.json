@@ -19,9 +19,10 @@
     },
     "plugins": [
       [
-        "expo-camera",
+        "expo-image-picker",
         {
-          "cameraPermission": "Allow Home Inventory to access your camera to photograph items."
+          "cameraPermission": "Allow Home Inventory to access your camera to photograph items.",
+          "photosPermission": "Allow Home Inventory to access your photos to select items."
         }
       ]
     ]

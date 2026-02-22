@@ -1,10 +1,13 @@
+import base64
 import json
 import logging
 
+import httpx
 from google import genai
 from google.genai import types
 
 from app.config import settings
+from app.database import supabase_admin
 from app.models import DetectResponse
 
 logger = logging.getLogger(__name__)
@@ -96,15 +99,32 @@ FALLBACK_RESPONSE = DetectResponse(
 )
 
 
+async def _download_image(image_url: str) -> bytes:
+    """Download image from Supabase Storage (private bucket) using the admin client."""
+    # Extract the storage path from the URL: .../storage/v1/object/bucket/path
+    parts = image_url.split(f"/storage/v1/object/{settings.storage_bucket}/")
+    if len(parts) == 2:
+        image_path = parts[1]
+        result = supabase_admin.storage.from_(settings.storage_bucket).download(image_path)
+        return result
+    # Fallback: try direct fetch
+    async with httpx.AsyncClient() as http:
+        resp = await http.get(image_url)
+        resp.raise_for_status()
+        return resp.content
+
+
 async def detect_item(image_url: str) -> DetectResponse:
     """Send image to Gemini and return normalized item detection."""
     try:
+        image_bytes = await _download_image(image_url)
+
         response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[
                 types.Content(
                     parts=[
-                        types.Part.from_uri(file_uri=image_url, mime_type="image/jpeg"),
+                        types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
                         types.Part.from_text(text=DETECTION_PROMPT),
                     ]
                 )
@@ -129,6 +149,9 @@ async def detect_item(image_url: str) -> DetectResponse:
         )
         return result
 
-    except Exception:
+    except Exception as exc:
         logger.exception("Gemini detection failed")
-        return FALLBACK_RESPONSE
+        exc_str = str(exc)
+        if "429" in exc_str or "RESOURCE_EXHAUSTED" in exc_str:
+            raise RuntimeError("AI quota exceeded. Please try again later or check your Gemini API plan.")
+        raise RuntimeError(f"AI detection failed: {exc_str}")
