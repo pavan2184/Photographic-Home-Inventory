@@ -32,6 +32,8 @@ export default function DetectScreen({ route, navigation }) {
   const [brand, setBrand] = useState("");
   const [confidence, setConfidence] = useState(0);
   const [isUncertain, setIsUncertain] = useState(false);
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
 
   useEffect(() => {
     detectItem();
@@ -59,15 +61,37 @@ export default function DetectScreen({ route, navigation }) {
     if (!name.trim()) return showAlert("Error", "Name is required");
     if (!category.trim()) return showAlert("Error", "Category is required");
 
+    // Validate purchase price if entered
+    if (purchasePrice.trim()) {
+      const price = parseFloat(purchasePrice.trim());
+      if (isNaN(price) || price <= 0) {
+        return showAlert("Error", "Purchase price must be a positive number");
+      }
+    }
+
+    // Validate purchase date if entered
+    if (purchaseDate.trim()) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(purchaseDate.trim())) {
+        return showAlert("Error", "Purchase date must be YYYY-MM-DD format");
+      }
+    }
+
     setSaving(true);
     try {
-      await api.createItem({
+      const payload = {
         name: name.trim(),
         category: category.trim(),
         brand: brand.trim() || null,
         image_url: imageUrl,
         confidence_score: editable ? 0 : confidence,
-      });
+      };
+      if (purchasePrice.trim()) {
+        payload.purchase_price = parseFloat(purchasePrice.trim());
+      }
+      if (purchaseDate.trim()) {
+        payload.purchase_date = purchaseDate.trim();
+      }
+      await api.createItem(payload);
       navigation.popToTop();
     } catch (e) {
       showAlert("Save Failed", e.message);
@@ -153,6 +177,25 @@ export default function DetectScreen({ route, navigation }) {
         onChangeText={setBrand}
         editable={editable}
         placeholder="Brand (optional)"
+        placeholderTextColor="#555"
+      />
+
+      <Text style={styles.label}>Purchase Price (SGD)</Text>
+      <TextInput
+        style={styles.input}
+        value={purchasePrice}
+        onChangeText={setPurchasePrice}
+        placeholder="e.g. 299.00 (optional)"
+        placeholderTextColor="#555"
+        keyboardType="decimal-pad"
+      />
+
+      <Text style={styles.label}>Purchase Date</Text>
+      <TextInput
+        style={styles.input}
+        value={purchaseDate}
+        onChangeText={setPurchaseDate}
+        placeholder="YYYY-MM-DD (optional)"
         placeholderTextColor="#555"
       />
 

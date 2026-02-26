@@ -53,6 +53,12 @@ export const api = {
 
   getItem: (id) => request(`/items/${id}`),
 
+  updateItem: (id, data) =>
+    request(`/items/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   deleteItem: (id) => request(`/items/${id}`, { method: "DELETE" }),
 
   // Metadata
@@ -66,4 +72,12 @@ export const api = {
 
   deleteMetadata: (itemId, metadataId) =>
     request(`/items/${itemId}/metadata/${metadataId}`, { method: "DELETE" }),
+
+  // Valuation
+  getItemValuation: (itemId, force = false) =>
+    request(`/items/${itemId}/valuation${force ? '?force=true' : ''}`),
+  getItemValuationHistory: (itemId) => request(`/items/${itemId}/valuation/history`),
+
+  // Assets
+  getAssetSummary: () => request("/assets/summary"),
 };

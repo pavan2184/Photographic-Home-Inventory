@@ -12,6 +12,7 @@ import HomeScreen from "./src/screens/HomeScreen";
 import CameraScreen from "./src/screens/CameraScreen";
 import DetectScreen from "./src/screens/DetectScreen";
 import ItemDetailScreen from "./src/screens/ItemDetailScreen";
+import DashboardScreen from "./src/screens/DashboardScreen";
 
 const Stack = createStackNavigator();
 
@@ -32,7 +33,7 @@ function AppNavigator() {
         headerStyle: { backgroundColor: "#1a1a2e" },
         headerTintColor: "#fff",
         headerTitleStyle: { fontWeight: "600" },
-        cardStyle: { backgroundColor: "#0f0f23" },
+        cardStyle: { backgroundColor: "#0f0f23", flex: 1 },
       }}
     >
       {session ? (
@@ -41,6 +42,7 @@ function AppNavigator() {
           <Stack.Screen name="Camera" component={CameraScreen} options={{ title: "Add Photo" }} />
           <Stack.Screen name="Detect" component={DetectScreen} options={{ title: "Identify Item" }} />
           <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: "Item Details" }} />
+          <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: "Asset Dashboard" }} />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />

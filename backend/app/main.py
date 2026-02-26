@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import items, upload
+from app.routers import assets, items, upload
 
 app = FastAPI(
     title="Home Inventory API",
@@ -29,6 +29,7 @@ else:
 
 app.include_router(upload.router)
 app.include_router(items.router)
+app.include_router(assets.router)
 
 
 @app.get("/health")

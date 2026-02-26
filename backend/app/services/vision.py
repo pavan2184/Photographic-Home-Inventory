@@ -120,7 +120,7 @@ async def detect_item(image_url: str) -> DetectResponse:
         image_bytes = await _download_image(image_url)
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=[
                 types.Content(
                     parts=[

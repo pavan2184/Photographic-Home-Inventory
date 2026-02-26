@@ -60,6 +60,15 @@ export default function HomeScreen({ navigation }) {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={items.length === 0 && styles.emptyContainer}
+        ListHeaderComponent={
+          <TouchableOpacity
+            style={styles.dashboardBanner}
+            onPress={() => navigation.navigate("Dashboard")}
+          >
+            <Text style={styles.dashboardBannerText}>View Asset Dashboard</Text>
+            <Text style={styles.dashboardBannerArrow}>&rsaquo;</Text>
+          </TouchableOpacity>
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No items yet</Text>
@@ -120,6 +129,20 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   fabText: { color: "#fff", fontSize: 28, lineHeight: 30 },
+  dashboardBanner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#1a1a2e",
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#4caf5040",
+  },
+  dashboardBannerText: { color: "#4caf50", fontSize: 15, fontWeight: "600" },
+  dashboardBannerArrow: { color: "#4caf50", fontSize: 22, fontWeight: "bold" },
   signOut: { position: "absolute", left: 24, bottom: 40 },
   signOutText: { color: "#666", fontSize: 14 },
 });
