@@ -1,6 +1,26 @@
-# Home Inventory
+<a id="readme-top"></a>
 
-AI-powered home inventory management app. Photograph your belongings, let AI identify them, and track their value over time.
+<div align="center">
+  <h1>Home Inventory</h1>
+  <p><strong>Photograph it. Understand it. Track its value.</strong></p>
+  <p>An AI-assisted home inventory app for identifying belongings, organizing records, and following resale value over time.</p>
+  <p>
+    <a href="#features"><strong>Explore the product »</strong></a>
+    <br /><br />
+    <a href="#setup">View setup</a>
+    &middot;
+    <a href="https://github.com/pavan2184/Photographic-Home-Inventory/issues/new">Report a bug</a>
+    &middot;
+    <a href="https://github.com/pavan2184/Photographic-Home-Inventory/issues/new">Request a feature</a>
+  </p>
+</div>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React_Native-20232A?logo=react&amp;logoColor=61DAFB" alt="React Native" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&amp;logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&amp;logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Gemini-8E75B2?logo=googlegemini&amp;logoColor=white" alt="Gemini" />
+</p>
 
 ## Stack
 
